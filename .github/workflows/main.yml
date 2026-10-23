@@ -1,112 +1,56 @@
 
-project:
-  name: "Ninja Shadow Online"
-  type: "Complete Android 2D Action Platformer"
-  target: "Google AI Studio"
-  platform: "Android"
-  orientation: "Landscape"
+name: Build Android APK
 
-instructions:
-  role: >
-    Act as a professional game developer.
-    Build a complete, playable 2D ninja action platformer
-    inspired by dark ninja adventure games.
-    Do not create only a demo, mockup, or static webpage.
-    Generate working source code and all required project files.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
-  requirements:
-    - "Playable character with smooth animations"
-    - "Run, jump, double jump, dash and attack"
-    - "Enemies, traps, bosses and checkpoints"
-    - "Multiple levels and progressively harder missions"
-    - "Touchscreen joystick and action buttons"
-    - "Background music and sound effects"
-    - "Coins, upgrades and player inventory"
-    - "Responsive Android landscape gameplay"
-    - "Low, Medium and High graphics settings"
-    - "Stable 60 FPS target on supported devices"
+permissions:
+  contents: read
 
-  account_system:
-    registration: "Email and password"
-    login: true
-    logout: true
-    password_reset: true
-    guest_login: true
-    cloud_save: true
-    player_profile: true
-    secure_authentication: true
-    backend_required: true
+jobs:
+  build:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
 
-  online:
-    multiplayer: true
-    realtime_player_sync: true
-    matchmaking: true
-    player_rooms: true
-    online_leaderboard: true
-    reconnect_support: true
-    server_authoritative_validation: true
-    fake_online_mode: false
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-  backend:
-    authentication: "Firebase Authentication"
-    database: "Cloud Firestore"
-    multiplayer_server: "Implement a suitable authoritative game server"
-    security_rules: true
-    environment_variables: true
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-  gameplay:
-    style: "2D side-scrolling action platformer"
-    visual_theme: "Dark fantasy ninja"
-    levels:
-      - "Shadow Forest"
-      - "Forgotten Temple"
-      - "Cursed Mountains"
-      - "Dark Fortress"
-    abilities:
-      - "Run"
-      - "Jump"
-      - "Double Jump"
-      - "Wall Slide"
-      - "Dash"
-      - "Sword Attack"
-      - "Ranged Attack"
-    systems:
-      - "Enemy AI"
-      - "Boss battles"
-      - "Traps and moving platforms"
-      - "Quests and achievements"
-      - "Experience and upgrades"
-      - "Checkpoints"
-      - "Save and load progress"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-  audio:
-    background_music: true
-    sword_sounds: true
-    jump_sounds: true
-    enemy_sounds: true
-    boss_sounds: true
-    ambient_effects: true
-    master_volume_control: true
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
-  deliverables:
-    - "Complete source code"
-    - "All gameplay scenes and scripts"
-    - "Character and enemy animations"
-    - "Original placeholder assets and audio"
-    - "Account registration and login screens"
-    - "Working online multiplayer implementation"
-    - "Database schema and security rules"
-    - "Setup and deployment instructions"
-    - "Android APK and AAB build instructions"
-    - "Automated tests for critical systems"
+      - name: Build APK
+        shell: bash
+        run: |
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+            ./gradlew --no-daemon assembleDebug
+          elif [ -f ./app/build.gradle ] || [ -f ./app/build.gradle.kts ]; then
+            gradle --no-daemon assembleDebug
+          else
+            echo "ERROR: Android Gradle project not found."
+            echo "Check whether build.gradle or build.gradle.kts exists."
+            exit 1
+          fi
 
-  rules:
-    - "Never claim a feature works unless implemented and tested."
-    - "Do not leave core gameplay systems as TODO comments."
-    - "Do not expose API keys or server secrets."
-    - "Use original characters, art and audio."
-    - "If the project is too large, generate it in sequential parts."
-    - "Keep a consistent file structure across all parts."
-    - "Explain exactly where every file belongs."
-    - "Verify build commands and fix compilation errors."
-    - "Explain which external services require configuration."
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ninja-Android-APK
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
